@@ -9,25 +9,43 @@ namespace dirlist
 {
     class Program
     {
+        static Options RunOptions;
+
         static void Main(string[] args)
         {
             bool recursive = false;
             string path = string.Empty;
+            bool skipemptyfolder = false;
+            BooleanOptions booleanOptions = 0;
 
-            var parser = new CommandLine();
+            RunOptions = new Options();
+            var parser = new CommandLine();            
+
             parser.Parse(args);
 
             if (parser.Arguments.Count > 0)
             {
-                if (parser.Arguments.ContainsKey("s"))
-                {
-                    recursive = true;
-                }
                 if (parser.Arguments.ContainsKey("path"))
                 {
                     path = parser.Arguments["path"][0];
                 }
+
+                if (parser.Arguments.ContainsKey("s"))
+                {
+                    booleanOptions =  booleanOptions | BooleanOptions.Recursive;                    
+                }
+                if (parser.Arguments.ContainsKey("printemptyfolder"))  // Print empty folders
+                {
+                    booleanOptions = booleanOptions | BooleanOptions.PrintEmptyFolder;
+                }
             }
+
+            RunOptions.booleanOptions = booleanOptions;
+
+            if (string.IsNullOrEmpty(path))
+            {
+                path = ".";
+            }    
 
             try
             {
@@ -54,7 +72,11 @@ namespace dirlist
         {
             try
             {
-                Console.WriteLine(dir.FullName);
+                // Print name of non empty folder
+                if (dir.GetFiles().Length > 0 && RunOptions.booleanOptions.HasFlag(BooleanOptions.PrintEmptyFolder))
+                { 
+                    Console.WriteLine(dir.FullName);
+                }
 
                 // Show files
                 foreach (ZlpFileInfo f in dir.GetFiles())
